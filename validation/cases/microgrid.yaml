@@ -1,0 +1,129 @@
+# microgrid: EPFL 26-bus hybrid AC/DC microgrid (paper section IV-A), real cables to the converters
+#
+# Case files in YAML: MATPOWER-style tables, one row per element, complete with transformers and the DC side.
+#
+#     bus        id, name, base_kv, pd_mw, qd_mvar, gs_mw, bs_mvar, in_service   (loads/shunts as in MATPOWER)
+#     slack      bus, vm_pu, va_deg, in_service
+#     gen        bus, pg_mw, vg_pu, in_service                                   (PV generators)
+#     line       from, to, r_pu, x_pu, b_pu, in_service                          (b_pu: total charging)
+#     trafo      from, to, r_pu, x_pu, g_pu, b_pu, ratio, shift_deg, in_service  (MATPOWER branch model: tap at
+#                                                                                 'from', ratio 0 means 1, g/b
+#                                                                                 split half-half, from side /ratio^2)
+#     bus_dc     id, name, base_kv, pd_mw, in_service                            (pd_mw: DC load)
+#     line_dc    from, to, r_pu, in_service
+#     source_dc  bus, vm_pu, in_service                                          (DC voltage source)
+#     converter  name, ac_bus, dc_bus, mode, p_mw, q_mvar, vac_pu, va_deg, vdc_pu,
+#                p_dc_ref_mw, droop_k, vdc_ref_pu, loss_a, loss_b, loss_c, in_service
+#
+# Per unit on base_mva and the bus base_kv (from-bus base for lines). Converters connect directly to ac_bus and
+# dc_bus (no extra busbar nodes needed). Converter modes and the columns they use:
+#     PQ     p_mw, q_mvar          (injection into the AC grid)
+#     PV     p_mw, vac_pu
+#     VdcQ   vdc_pu, q_mvar
+#     VdcV   vdc_pu, vac_pu
+#     GF     vac_pu, va_deg        (grid-forming)
+#     droop  p_dc_ref_mw, droop_k, vdc_ref_pu, q_mvar:
+#            P_dc = p_dc_ref_mw - droop_k * (E_dc - vdc_ref_pu) * base_mva, P_dc injected into the DC grid
+#            (rectifier positive), droop_k = 1 / droop (e.g. 5 % droop -> 20)
+# Converter losses: P_loss = loss_a + loss_b |I| + loss_c |I|^2 (p.u.).
+
+name: microgrid
+base_mva: 0.1
+f_hz: 50
+
+bus:
+  columns: [id, name, base_kv, pd_mw, qd_mvar, gs_mw, bs_mvar, in_service]
+  rows:
+  #  id  name  base_kv   pd_mw  qd_mvar  gs_mw  bs_mvar  in_service
+  - [ 1,  "1",     0.4,      0,       0,     0,       0,       true]
+  - [ 2,  "2",     0.4,      0,       0,     0,       0,       true]
+  - [ 3,  "3",     0.4,   0.03,       0,     0,       0,       true]
+  - [ 4,  "4",     0.4,      0,       0,     0,       0,       true]
+  - [ 5,  "5",     0.4, 0.0375,  0.0075,     0,       0,       true]
+  - [ 6,  "6",     0.4,      0,       0,     0,       0,       true]
+  - [ 7,  "7",     0.4,      0,       0,     0,       0,       true]
+  - [ 8,  "8",     0.4,      0,       0,     0,       0,       true]
+  - [ 9,  "9",     0.4, 0.0101,       0,     0,       0,       true]
+  - [10, "10",     0.4,      0,       0,     0,       0,       true]
+  - [11, "11",     0.4,  0.015,  -0.003,     0,       0,       true]
+  - [12, "12",     0.4,      0,       0,     0,       0,       true]
+  - [13, "13",     0.4, 0.0202,       0,     0,       0,       true]
+  - [14, "14",     0.4,      0, -0.0124,     0,       0,       true]
+  - [15, "15",     0.4,      0,       0,     0,       0,       true]
+  - [16, "16",     0.4,      0,       0,     0,       0,       true]
+  - [17, "17",     0.4,      0,       0,     0,       0,       true]
+  - [18, "18",     0.4,      0,       0,     0,       0,       true]
+
+slack:
+  columns: [bus, vm_pu, va_deg, in_service]
+  rows:
+  #  bus  vm_pu  va_deg  in_service
+  - [  1,     1,      0,       true]
+
+gen:
+  columns: [bus, pg_mw, vg_pu, in_service]
+  rows: []
+
+line:
+  columns: [from, to, r_pu, x_pu, b_pu, in_service]
+  rows:
+  #  from  to    r_pu    x_pu  b_pu  in_service
+  - [   1,  2, 0.0119, 0.0052,    0,       true]
+  - [   2,  3, 0.0619, 0.0027,    0,       true]
+  - [   2,  4,  0.006, 0.0026,    0,       true]
+  - [   4,  5, 0.0146, 0.0024,    0,       true]
+  - [   4,  6, 0.0794, 0.0087,    0,       true]
+  - [   6,  7, 0.0227, 0.0025,    0,       true]
+  - [   4,  8, 0.0242, 0.0054,    0,       true]
+  - [   8,  9, 0.0051, 0.0022,    0,       true]
+  - [   8, 10, 0.0794, 0.0087,    0,       true]
+  - [  10, 11, 0.0619, 0.0027,    0,       true]
+  - [  10, 12, 0.0265, 0.0029,    0,       true]
+  - [  12, 13, 0.0227, 0.0025,    0,       true]
+  - [   7, 14, 0.0185,  0.003,    0,       true]
+  - [   9, 15, 0.0051, 0.0022,    0,       true]
+  - [  13, 16, 0.0051, 0.0022,    0,       true]
+  - [  11, 17, 0.0051, 0.0022,    0,       true]
+  - [   7, 18, 0.0051, 0.0022,    0,       true]
+
+trafo:
+  columns: [from, to, r_pu, x_pu, g_pu, b_pu, ratio, shift_deg, in_service]
+  rows: []
+
+bus_dc:
+  columns: [id, name, base_kv, pd_mw, in_service]
+  rows:
+  #  id  name  base_kv   pd_mw  in_service
+  - [19, "19",     0.8,      0,       true]
+  - [20, "20",     0.8,      0,       true]
+  - [21, "21",     0.8,      0,       true]
+  - [22, "22",     0.8,      0,       true]
+  - [23, "23",     0.8, -0.005,       true]
+  - [24, "24",     0.8, -0.005,       true]
+  - [25, "25",     0.8,  0.005,       true]
+  - [26, "26",     0.8,  0.005,       true]
+
+line_dc:
+  columns: [from, to, r_pu, in_service]
+  rows:
+  #  from  to    r_pu  in_service
+  - [  23, 19, 0.0312,       true]
+  - [  24, 20, 0.0312,       true]
+  - [  25, 21, 0.0312,       true]
+  - [  26, 22, 0.0312,       true]
+  - [  26, 23, 0.0781,       true]
+  - [  23, 25, 0.0781,       true]
+  - [  25, 24, 0.0781,       true]
+
+source_dc:
+  columns: [bus, vm_pu, in_service]
+  rows: []
+
+converter:
+  columns: [name, ac_bus, dc_bus, mode, p_mw, q_mvar, vac_pu, va_deg, vdc_pu, p_dc_ref_mw, droop_k, vdc_ref_pu, loss_a, loss_b, loss_c, in_service]
+  rows:
+  #      name  ac_bus  dc_bus  mode     p_mw  q_mvar  vac_pu  va_deg  vdc_pu  p_dc_ref_mw  droop_k  vdc_ref_pu  loss_a  loss_b  loss_c  in_service
+  - [IC 19-15,     15,     19, VdcQ,       0,   0.01,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 20-16,     16,     20, VdcQ,  0.0031,   0.01,      1,      0,   1.02,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 21-17,     17,     21, VdcQ, -0.0017,   0.01,      1,      0,   0.98,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 22-18,     18,     22,   PQ, -0.0031,   0.01,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]

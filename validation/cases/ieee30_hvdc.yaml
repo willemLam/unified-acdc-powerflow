@@ -1,0 +1,172 @@
+# ieee30_hvdc: IEEE 30 with two HVDC grids, full case data
+#
+# Case files in YAML: MATPOWER-style tables, one row per element, complete with transformers and the DC side.
+#
+#     bus        id, name, base_kv, pd_mw, qd_mvar, gs_mw, bs_mvar, in_service   (loads/shunts as in MATPOWER)
+#     slack      bus, vm_pu, va_deg, in_service
+#     gen        bus, pg_mw, vg_pu, in_service                                   (PV generators)
+#     line       from, to, r_pu, x_pu, b_pu, in_service                          (b_pu: total charging)
+#     trafo      from, to, r_pu, x_pu, g_pu, b_pu, ratio, shift_deg, in_service  (MATPOWER branch model: tap at
+#                                                                                 'from', ratio 0 means 1, g/b
+#                                                                                 split half-half, from side /ratio^2)
+#     bus_dc     id, name, base_kv, pd_mw, in_service                            (pd_mw: DC load)
+#     line_dc    from, to, r_pu, in_service
+#     source_dc  bus, vm_pu, in_service                                          (DC voltage source)
+#     converter  name, ac_bus, dc_bus, mode, p_mw, q_mvar, vac_pu, va_deg, vdc_pu,
+#                p_dc_ref_mw, droop_k, vdc_ref_pu, loss_a, loss_b, loss_c, in_service
+#
+# Per unit on base_mva and the bus base_kv (from-bus base for lines). Converters connect directly to ac_bus and
+# dc_bus (no extra busbar nodes needed). Converter modes and the columns they use:
+#     PQ     p_mw, q_mvar          (injection into the AC grid)
+#     PV     p_mw, vac_pu
+#     VdcQ   vdc_pu, q_mvar
+#     VdcV   vdc_pu, vac_pu
+#     GF     vac_pu, va_deg        (grid-forming)
+#     droop  p_dc_ref_mw, droop_k, vdc_ref_pu, q_mvar:
+#            P_dc = p_dc_ref_mw - droop_k * (E_dc - vdc_ref_pu) * base_mva, P_dc injected into the DC grid
+#            (rectifier positive), droop_k = 1 / droop (e.g. 5 % droop -> 20)
+# Converter losses: P_loss = loss_a + loss_b |I| + loss_c |I|^2 (p.u.).
+
+name: ieee30_hvdc
+base_mva: 100
+f_hz: 50
+
+bus:
+  columns: [id, name, base_kv, pd_mw, qd_mvar, gs_mw, bs_mvar, in_service]
+  rows:
+  #   id   name  base_kv  pd_mw  qd_mvar  gs_mw  bs_mvar  in_service
+  - [101, "101",     135,     0,       0,     0,       0,       true]
+  - [102, "102",     135,    30,    12.7,     0,       0,       true]
+  - [103, "103",     135,   2.4,     1.2,     0,       0,       true]
+  - [104, "104",     135,   7.6,     1.6,     0,       0,       true]
+  - [105, "105",     135,     0,       0,     0,       0,       true]
+  - [106, "106",     135,     0,       0,     0,       0,       true]
+  - [107, "107",     135,  22.8,    10.9,     0,       0,       true]
+  - [108, "108",     135,    30,      30,     0,       0,       true]
+  - [109, "109",     135,     0,       0,     0,       0,       true]
+  - [110, "110",     135,   5.8,       2,     0,       0,       true]
+  - [111, "111",     135,     0,       0,     0,       0,       true]
+  - [112, "112",     135,  11.2,     7.5,     0,       0,       true]
+  - [113, "113",     135,   -37,     -15,     0,       0,       true]
+  - [114, "114",     135,   6.2,     1.6,     0,       0,       true]
+  - [115, "115",     135,   8.2,     2.5,     0,       0,       true]
+  - [116, "116",     135,   3.5,     1.8,     0,       0,       true]
+  - [117, "117",     135,     9,     5.8,     0,       0,       true]
+  - [118, "118",     135,   3.2,     0.9,     0,       0,       true]
+  - [119, "119",     135,   9.5,     3.4,     0,       0,       true]
+  - [120, "120",     135,   2.2,     0.7,     0,       0,       true]
+  - [121, "121",     135,  17.5,    11.2,     0,       0,       true]
+  - [122, "122",     135,     0,       0,     0,       0,       true]
+  - [123, "123",     135,   3.2,     1.6,     0,       0,       true]
+  - [124, "124",     135,   8.7,     6.7,     0,       0,       true]
+  - [125, "125",     135,     0,       0,     0,       0,       true]
+  - [126, "126",     135,   3.5,     2.3,     0,       0,       true]
+  - [127, "127",     135,     0,       0,     0,       0,       true]
+  - [128, "128",     135,     0,       0,     0,       0,       true]
+  - [129, "129",     135,   2.4,     0.9,     0,       0,       true]
+  - [130, "130",     135,  10.6,     1.9,     0,       0,       true]
+
+slack:
+  columns: [bus, vm_pu, va_deg, in_service]
+  rows:
+  #  bus  vm_pu  va_deg  in_service
+  - [101,     1,      0,       true]
+
+gen:
+  columns: [bus, pg_mw, vg_pu, in_service]
+  rows:
+  #  bus  pg_mw  vg_pu  in_service
+  - [102, 60.97,     1,       true]
+  - [122, 21.59,     1,       true]
+  - [127, 26.91,     1,       true]
+  - [123,  19.2,     1,       true]
+
+line:
+  columns: [from, to, r_pu, x_pu, b_pu, in_service]
+  rows:
+  #  from   to  r_pu  x_pu  b_pu  in_service
+  - [ 101, 102, 0.02, 0.06, 0.03,       true]
+  - [ 101, 103, 0.05, 0.19, 0.02,       true]
+  - [ 102, 104, 0.06, 0.17, 0.02,       true]
+  - [ 103, 104, 0.01, 0.04,    0,       true]
+  - [ 102, 105, 0.05,  0.2, 0.02,       true]
+  - [ 102, 106, 0.06, 0.18, 0.02,       true]
+  - [ 104, 106, 0.01, 0.04,    0,       true]
+  - [ 105, 107, 0.05, 0.12, 0.01,       true]
+  - [ 106, 107, 0.03, 0.08, 0.01,       true]
+  - [ 106, 108, 0.01, 0.04,    0,       true]
+  - [ 106, 109,    0, 0.21,    0,       true]
+  - [ 106, 110,    0, 0.56,    0,       true]
+  - [ 109, 111,    0, 0.21,    0,       true]
+  - [ 109, 110,    0, 0.11,    0,       true]
+  - [ 104, 112,    0, 0.26,    0,       true]
+  - [ 112, 113,    0, 0.14,    0,       true]
+  - [ 112, 114, 0.12, 0.26,    0,       true]
+  - [ 112, 115, 0.07, 0.13,    0,       true]
+  - [ 112, 116, 0.09,  0.2,    0,       true]
+  - [ 114, 115, 0.22,  0.2,    0,       true]
+  - [ 116, 117, 0.08, 0.19,    0,       true]
+  - [ 115, 118, 0.11, 0.22,    0,       true]
+  - [ 118, 119, 0.06, 0.13,    0,       true]
+  - [ 119, 120, 0.03, 0.07,    0,       true]
+  - [ 110, 120, 0.09, 0.21,    0,       true]
+  - [ 110, 117, 0.03, 0.08,    0,       true]
+  - [ 110, 121, 0.03, 0.07,    0,       true]
+  - [ 110, 122, 0.07, 0.15,    0,       true]
+  - [ 121, 122, 0.01, 0.02,    0,       true]
+  - [ 115, 123,  0.1,  0.2,    0,       true]
+  - [ 122, 124, 0.12, 0.18,    0,       true]
+  - [ 123, 124, 0.13, 0.27,    0,       true]
+  - [ 124, 125, 0.19, 0.33,    0,       true]
+  - [ 125, 126, 0.25, 0.38,    0,       true]
+  - [ 125, 127, 0.11, 0.21,    0,       true]
+  - [ 128, 127,    0,  0.4,    0,       true]
+  - [ 127, 129, 0.22, 0.42,    0,       true]
+  - [ 127, 130, 0.32,  0.6,    0,       true]
+  - [ 129, 130, 0.24, 0.45,    0,       true]
+  - [ 108, 128, 0.06,  0.2, 0.02,       true]
+  - [ 106, 128, 0.02, 0.06, 0.01,       true]
+
+trafo:
+  columns: [from, to, r_pu, x_pu, g_pu, b_pu, ratio, shift_deg, in_service]
+  rows: []
+
+bus_dc:
+  columns: [id, name, base_kv, pd_mw, in_service]
+  rows:
+  #  id  name  base_kv  pd_mw  in_service
+  - [ 1,  "1",     200,     0,       true]
+  - [ 2,  "2",     200,     0,       true]
+  - [ 3,  "3",     200,     0,       true]
+  - [ 4,  "4",     200,     0,       true]
+  - [ 5,  "5",     200,     0,       true]
+  - [ 6,  "6",     200,     0,       true]
+  - [ 7,  "7",     200,   -15,       true]
+  - [ 8,  "8",     200,   -10,       true]
+
+line_dc:
+  columns: [from, to, r_pu, in_service]
+  rows:
+  #  from  to  r_pu  in_service
+  - [   1,  2, 0.05,       true]
+  - [   1,  3, 0.05,       true]
+  - [   2,  3, 0.05,       true]
+  - [   4,  5, 0.05,       true]
+  - [   4,  6, 0.05,       true]
+  - [   5,  8, 0.05,       true]
+  - [   6,  7, 0.05,       true]
+
+source_dc:
+  columns: [bus, vm_pu, in_service]
+  rows: []
+
+converter:
+  columns: [name, ac_bus, dc_bus, mode, p_mw, q_mvar, vac_pu, va_deg, vdc_pu, p_dc_ref_mw, droop_k, vdc_ref_pu, loss_a, loss_b, loss_c, in_service]
+  rows:
+  #      name  ac_bus  dc_bus  mode  p_mw  q_mvar  vac_pu  va_deg  vdc_pu  p_dc_ref_mw  droop_k  vdc_ref_pu  loss_a  loss_b  loss_c  in_service
+  - [IC 113-1,    113,      1, VdcQ,    0,    0.2,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 115-2,    115,      2, VdcQ,    0,    0.2,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 130-3,    130,      3,   PQ,  0.1,    0.2,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 102-4,    102,      4, VdcQ,    0,    0.2,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 105-5,    105,      5,   PQ,  0.1,    0.2,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]
+  - [IC 106-6,    106,      6,   PQ,  0.1,    0.2,      1,      0,      1,           0,       0,          1,      0,      0,      0,       true]

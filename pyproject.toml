@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unified-acdc-powerflow"
+version = "0.1.0"
+description = "Unified AC/DC Newton-Raphson power flow for hybrid AC/DC grids and multi-terminal HVDC, on pandapower networks"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Willem Lambrichts", email = "willem.lambrichts@gmail.com" }]
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "pandas", "pandapower==3.5.5", "pyyaml"]
+keywords = ["power flow", "load flow", "HVDC", "multi-terminal", "AC/DC", "pandapower", "Newton-Raphson"]
+
+[project.urls]
+Repository = "https://github.com/WillemLam/unified-acdc-powerflow"
+Paper = "https://doi.org/10.1109/TPWRS.2024.3378926"
+
+[project.optional-dependencies]
+dev = ["pytest", "jupyter", "nbformat", "nbconvert", "ipykernel", "matplotlib"]
+
+[tool.setuptools]
+packages = ["unified_acdc_powerflow"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

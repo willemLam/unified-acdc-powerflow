@@ -1,0 +1,9 @@
+.superpowers/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+acdc_grid.egg-info/
+*.egg-info/
+benchmarks/pandapower_acdc/unified-acdc-powerflow/
