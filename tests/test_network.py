@@ -144,3 +144,10 @@ def test_native_pandapower_vdc_and_vm_control_becomes_vdcv():
     m = build_model(net)
     assert list(m.conv["mode"]) == ["VdcQ", "VdcV"]
     assert m.conv["vac"][1] == pytest.approx(1.01) and m.conv["vdc"][1] == pytest.approx(1.0)
+
+
+def test_model_keeps_pandapowers_branch_lookup():
+    net = pn.case118()
+    m = build_model(net)
+    assert tuple(m._branch_lookup["line"]) == (0, len(net.line))
+    assert tuple(m._branch_lookup["trafo"]) == (len(net.line), len(net.line) + len(net.trafo))

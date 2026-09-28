@@ -79,6 +79,7 @@ class Model:
     dc_names: list = field(default_factory=list)
     _ppc: dict = None
     _dc_lines: tuple = None      # (from, to, g, g_shunt) in DC node indices, p.u.
+    _branch_lookup: dict = None  # pandapower element -> (first, end) rows of _ppc["branch"]
 
     @property
     def n_conv(self):
@@ -353,7 +354,8 @@ def build_model(net):
                  bus_lookup=bus_lookup, bus_dc_lookup=bus_dc_lookup, ac_ref=ac_ref, ac_pv=ac_pv & ~ac_ref,
                  v_set=v_set, va_set=va_set, s_spec=s_spec, dc_fixed=dc_fixed, dc_source=dc_source, vdc_set=vdc_set,
                  p_dc_spec=p_dc_spec, conv=conv, ac_names=names,
-                 dc_names=dc_names, _ppc=ppc, _dc_lines=dc_lines)
+                 dc_names=dc_names, _ppc=ppc, _dc_lines=dc_lines,
+                 _branch_lookup={k: (int(v[0]), int(v[1])) for k, v in net_ac._pd2ppc_lookups.get("branch", {}).items()})
 
 
 def _check_dc_islands(n_dc, dc_lines, dc_fixed, conv, dc_bus_id):
