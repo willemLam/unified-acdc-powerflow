@@ -5,8 +5,9 @@ import pytest
 import yaml
 
 from unified_acdc_powerflow import build_model, build_ybus, run_pf
-from unified_acdc_powerflow.cases import CASES, load_case
+from unified_acdc_powerflow.cases import CASE_DIR, CASES, load_case
 from unified_acdc_powerflow.grid_yaml import read_case, write_case
+from tests.helpers import two_area_net
 
 
 def _Y(net):
@@ -111,3 +112,20 @@ def test_written_file_is_one_row_per_element(tmp_path):
     assert len(doc["bus"]["rows"]) == 14
     assert len(doc["line"]["rows"]) + len(doc["trafo"]["rows"]) == len(net.line) + len(net.trafo)
     assert all(len(r) == len(doc["line"]["columns"]) for r in doc["line"]["rows"])
+
+
+def test_ace_converter_survives_the_round_trip(tmp_path):
+    net = two_area_net("ACE", p_ac_mw=-15.0, q_ac_mvar=4.0, ace_bus=1, ace_k_mw_per_deg=20.0)
+    write_case(net, tmp_path / "c.yaml")
+    back = read_case(tmp_path / "c.yaml")
+    assert back.vsc.loc[1, "mode"] == "ACE"
+    assert int(back.vsc.loc[1, "ace_bus"]) == 1 and back.vsc.loc[1, "ace_k_mw_per_deg"] == 20.0
+    ra, rb = run_pf(net, tol=1e-10), run_pf(back, tol=1e-10)
+    assert rb.converged and np.max(np.abs(ra.E_ac - rb.E_ac)) < 1e-9
+
+
+def test_case_file_without_ace_columns_still_loads():
+    cols = yaml.safe_load((CASE_DIR / "microgrid.yaml").read_text())["converter"]["columns"]
+    assert "ace_bus" not in cols
+    net = load_case("microgrid")
+    assert (net.vsc.ace_bus == -1).all()

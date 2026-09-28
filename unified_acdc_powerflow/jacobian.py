@@ -9,6 +9,7 @@ Building blocks (rectangular coordinates, S = E conj(Y E)):
     dS/dE'  = diag(conj I) + diag(E) conj(Y)
     dS/dE'' = j diag(conj I) - j diag(E) conj(Y)
     d|E_l|^2 = 2 E'_l dE'_l + 2 E''_l dE''_l
+    dθ_n = (E'_n dE''_n - E''_n dE'_n) / |E_n|^2          (ACE: dP_ace = -k (dθ_l - dθ_r))
     dP_dc/dE_dc = diag(G E_dc) + diag(E_dc) G
     d Re(I) = [G, -B] . [dE', dE''],   d Im(I) = [B, G] . [dE', dE'']
 Loss derivative ([P] (23)): dP_loss = (b + 2c|I|) d|I|, with
@@ -48,6 +49,10 @@ def jacobian(model, ev):
     def gV2(l):  # d|E_l|^2
         return sp.csr_matrix(([2 * E[l].real, 2 * E[l].imag], ([0, 0], [l, na + l])), shape=(1, nf))
 
+    def gTheta(n):  # dθ_n = (E'_n dE''_n - E''_n dE'_n) / |E_n|^2
+        v2 = abs(E[n]) ** 2
+        return sp.csr_matrix(([-E[n].imag / v2, E[n].real / v2], ([0, 0], [n, na + n])), shape=(1, nf))
+
     # --- ordinary nodes: rows 1 = dP, rows 2 = dQ (PQ) or d|E|^2 (PV), DC rows = dP_dc ---------------------
     A_Q2 = A_Q.tolil()
     for l in np.flatnonzero(model.ac_pv):
@@ -68,6 +73,10 @@ def jacobian(model, ev):
             dp_dc = -c["k"][i] * unit(2 * na + k)                # dP_dc,conv = -k dE_k
             Jf[r1, :] = Jf[r1, :] + dp_dc + gloss                # row 1: ... + P_dc,conv + P_loss
             Jf[rk, :] = Jf[rk, :] - dp_dc                        # DC row: ... - P_dc,conv
+        elif m == "ACE":
+            dp = -c["kace"][i] * (gTheta(l) - gTheta(c["r"][i]))   # dP_ace
+            Jf[r1, :] = Jf[r1, :] - dp                              # row 1: ... - P_ace
+            Jf[rk, :] = Jf[rk, :] + dp + gloss                      # DC row: ... + P_ace + P_loss
         elif m in ("VdcQ", "VdcV"):
             # root E_k* = (-s + sqrt(alpha)) / (2 G_kk), s = sum_{m!=k} G_km E_m, c = P_conv + P_loss - p_dc_spec
             Gkk = G[k, k]

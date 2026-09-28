@@ -11,7 +11,7 @@
     line_dc    from, to, r_pu, in_service
     source_dc  bus, vm_pu, in_service                                          (DC voltage source)
     converter  name, ac_bus, dc_bus, mode, p_mw, q_mvar, vac_pu, va_deg, vdc_pu,
-               p_dc_ref_mw, droop_k, vdc_ref_pu, loss_a, loss_b, loss_c, in_service
+               p_dc_ref_mw, droop_k, vdc_ref_pu, loss_a, loss_b, loss_c, in_service, ace_bus, ace_k
 
 Per unit on base_mva and the bus base_kv (from-bus base for lines). Converters connect directly to ac_bus and
 dc_bus (no extra busbar nodes needed). Converter modes and the columns they use:
@@ -23,6 +23,9 @@ dc_bus (no extra busbar nodes needed). Converter modes and the columns they use:
     droop  p_dc_ref_mw, droop_k, vdc_ref_pu, q_mvar:
            P_dc = p_dc_ref_mw - droop_k * (E_dc - vdc_ref_pu) * base_mva, P_dc injected into the DC grid
            (rectifier positive), droop_k = 1 / droop (e.g. 5 % droop -> 20)
+    ACE    p_mw, q_mvar, ace_bus, ace_k:
+           AC emulation, P = p_mw - ace_k * (θ_ac_bus - θ_ace_bus), ace_k in MW/deg (columns optional: files
+           without them load with ace_bus = -1, ace_k = 0)
 Converter losses: P_loss = loss_a + loss_b |I| + loss_c |I|^2 (p.u.).
 
 read_case() builds a pandapower net (lines, 2-winding transformers with a ratio tap, loads, shunts, gens,
@@ -52,8 +55,10 @@ TABLES = {
     "line_dc": ["from", "to", "r_pu", "in_service"],
     "source_dc": ["bus", "vm_pu", "in_service"],
     "converter": ["name", "ac_bus", "dc_bus", "mode", "p_mw", "q_mvar", "vac_pu", "va_deg", "vdc_pu",
-                  "p_dc_ref_mw", "droop_k", "vdc_ref_pu", "loss_a", "loss_b", "loss_c", "in_service"],
+                  "p_dc_ref_mw", "droop_k", "vdc_ref_pu", "loss_a", "loss_b", "loss_c", "in_service",
+                  "ace_bus", "ace_k"],
 }
+OPTIONAL_COLUMNS = {"converter": {"ace_bus": -1, "ace_k": 0.0}}  # added later; older files do not have them
 MAX_I_KA = 99.0  # thermal limits are not part of the case files yet
 
 
@@ -134,7 +139,7 @@ def read_case(path):
                           vm_dc_pu=float(r["vdc_pu"]), p_dc_ref_mw=float(r["p_dc_ref_mw"]),
                           droop_k=float(r["droop_k"]), vdc_ref_pu=float(r["vdc_ref_pu"]),
                           loss_a=float(r["loss_a"]), loss_b=float(r["loss_b"]), loss_c=float(r["loss_c"]),
-                          name=r["name"])
+                          ace_bus=int(r["ace_bus"]), ace_k_mw_per_deg=float(r["ace_k"]), name=r["name"])
         net.vsc.at[j, "in_service"] = bool(r["in_service"])
     return net
 
@@ -142,14 +147,14 @@ def read_case(path):
 def _rows(doc, name):
     tab = doc.get(name) or {}
     cols = tab.get("columns", TABLES[name])
-    missing = set(TABLES[name]) - set(cols)
+    missing = set(TABLES[name]) - set(cols) - set(OPTIONAL_COLUMNS.get(name, {}))
     if missing:
         raise ValueError(f"table '{name}' misses columns {sorted(missing)}")
     out = []
     for i, row in enumerate(tab.get("rows") or []):
         if len(row) != len(cols):
             raise ValueError(f"table '{name}', row {i + 1}: {len(row)} values for {len(cols)} columns")
-        out.append(dict(zip(cols, row)))
+        out.append({**OPTIONAL_COLUMNS.get(name, {}), **dict(zip(cols, row))})
     return out
 
 
@@ -230,7 +235,8 @@ def write_case(net, path, title=None):
                                   int(v.bus_dc), vals["mode"], vals["p_ac_mw"], vals["q_ac_mvar"],
                                   vals["vm_ac_pu"], vals["va_degree"], vals["vm_dc_pu"], vals["p_dc_ref_mw"],
                                   vals["droop_k"], vals["vdc_ref_pu"], vals["loss_a"], vals["loss_b"],
-                                  vals["loss_c"], bool(v.in_service)])
+                                  vals["loss_c"], bool(v.in_service), int(vals["ace_bus"]),
+                                  vals["ace_k_mw_per_deg"]])
 
     with open(path, "w") as fh:
         fh.write(_header(title or net.name or "", base))

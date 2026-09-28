@@ -8,7 +8,8 @@ Node classes ([P] Table I / [T] Table 3.1):
     DC V (source_dc)                E fixed ([P] (6))
     interfacing converter (vsc)     modes PQ ([P] (17)-(19)), VdcQ ([P] (7), (12)-(15)), PV ([P] (8), (4)),
                                     VdcV (the Edc-|Eac| pair of [P] section I: (14)-(15) with (4)),
-                                    grid-forming GF ([T] (3.37)-(3.44)), and droop (standard DC-voltage droop)
+                                    grid-forming GF ([T] (3.37)-(3.44)), droop (standard DC-voltage droop),
+                                    and AC emulation ACE (P = P0 - k (θ_l - θ_r), standard HVDC AC-line emulation)
 
 A converter connects directly to its AC bus `vsc.bus` and DC bus `vsc.bus_dc`; both may have any number of
 neighbours and other elements (the closed forms use the sums over all neighbours). Station components
@@ -23,13 +24,13 @@ import pandapower as pp
 import scipy.sparse as sp
 from pandapower.auxiliary import _add_ppc_options
 from pandapower.pd2ppc import _pd2ppc
-from pandapower.pypower.idx_brch import branch_cols
+from pandapower.pypower.idx_brch import BR_STATUS, F_BUS, T_BUS, branch_cols
 from pandapower.pypower.idx_bus import BUS_TYPE, NONE, PD, QD, REF, VA
 from pandapower.pypower.idx_gen import GEN_BUS, GEN_STATUS, PG, QG, VG
 from pandapower.pypower.makeYbus import makeYbus
 from scipy.sparse.csgraph import connected_components
 
-MODES = ("PQ", "VdcQ", "PV", "VdcV", "GF", "droop")
+MODES = ("PQ", "VdcQ", "PV", "VdcV", "GF", "droop", "ACE")
 # engine setpoint columns on net.vsc (all injections into the grid, generator convention)
 CONV_COLUMNS = {
     "mode": "PQ",
@@ -37,6 +38,7 @@ CONV_COLUMNS = {
     "vm_ac_pu": 1.0, "va_degree": 0.0,     # PV / VdcV: |E_l|; GF: |E_l| and angle
     "vm_dc_pu": 1.0,                       # VdcQ / VdcV: E_k
     "p_dc_ref_mw": 0.0, "droop_k": 0.0, "vdc_ref_pu": 1.0,  # droop: P_dc = p_dc_ref - k (E_k - vdc_ref) sn_mva
+    "ace_bus": -1, "ace_k_mw_per_deg": 0.0,  # ACE: remote AC bus r and gain k: P = p_ac_mw - k (θ_bus - θ_r)
     "loss_a": 0.0, "loss_b": 0.0, "loss_c": 0.0,           # P_loss = a + b|I| + c|I|^2 (p.u., 3.62)
 }
 # pandapower's own control modes, used only when pandapower itself solves the net. pandapower uses load
@@ -48,6 +50,7 @@ _PP_CONTROL = {
     "VdcV": ("vm_pu", "vm_ac_pu", "vm_pu", "vm_dc_pu"),
     "GF": ("slack", "vm_ac_pu", "p_mw", None),
     "droop": ("q_mvar", "q_ac_mvar", "p_mw", None),  # value: -p_dc_ref_mw (pandapower has no droop)
+    "ACE": ("q_mvar", "q_ac_mvar", "p_mw", "p_ac_mw"),  # pandapower has no AC emulation: P0 as a fixed setpoint
 }
 
 
@@ -84,7 +87,7 @@ class Model:
 
 def add_converter(net, bus, bus_dc, mode, p_ac_mw=0.0, q_ac_mvar=0.0, vm_ac_pu=1.0, va_degree=0.0,
                   vm_dc_pu=1.0, p_dc_ref_mw=0.0, droop_k=0.0, vdc_ref_pu=1.0, loss_a=0.0, loss_b=0.0,
-                  loss_c=0.0, name=None):
+                  loss_c=0.0, ace_bus=-1, ace_k_mw_per_deg=0.0, name=None):
     """Add an interfacing converter (zero impedance) as a `vsc` row with the engine's setpoint columns.
 
     Modes and their setpoints:
@@ -96,13 +99,16 @@ def add_converter(net, bus, bus_dc, mode, p_ac_mw=0.0, q_ac_mvar=0.0, vm_ac_pu=1
         droop  p_dc_ref_mw, droop_k, vdc_ref_pu, q_ac_mvar:
                P_dc = p_dc_ref_mw - droop_k * (E_dc - vdc_ref_pu) * sn_mva, P_dc injected into the DC grid
                (rectifier positive), droop_k >= 0 in p.u. power per p.u. voltage (droop_k = 1 / droop).
+        ACE    p_ac_mw, q_ac_mvar, ace_bus, ace_k_mw_per_deg:
+               AC emulation, P = p_ac_mw - ace_k_mw_per_deg * (θ_bus - θ_ace_bus), MW and degrees: the link
+               behaves like a line from bus to ace_bus. The other end of the link holds the DC voltage (VdcQ/VdcV).
     Losses: P_loss = loss_a + loss_b |I| + loss_c |I|^2, all in p.u. on sn_mva.
     """
     if mode not in MODES:
         raise ValueError(f"unknown converter mode {mode!r}; use one of {MODES}")
     vals = dict(mode=mode, p_ac_mw=p_ac_mw, q_ac_mvar=q_ac_mvar, vm_ac_pu=vm_ac_pu, va_degree=va_degree,
                 vm_dc_pu=vm_dc_pu, p_dc_ref_mw=p_dc_ref_mw, droop_k=droop_k, vdc_ref_pu=vdc_ref_pu,
-                loss_a=loss_a, loss_b=loss_b, loss_c=loss_c)
+                loss_a=loss_a, loss_b=loss_b, loss_c=loss_c, ace_bus=ace_bus, ace_k_mw_per_deg=ace_k_mw_per_deg)
     mac, vac, mdc, vdc = _PP_CONTROL[mode]
     value_dc = vals[vdc] if vdc else (-p_dc_ref_mw if mode == "droop" else 0.0)
     idx = pp.create_vsc(net, bus, bus_dc, r_ohm=0.0, x_ohm=0.0, r_dc_ohm=0.0,
@@ -275,8 +281,8 @@ def build_model(net):
     dc_source = dc_fixed.copy()
 
     # ---- converters -------------------------------------------------------------------------------
-    conv = {k: np.zeros(0) for k in ("p", "q", "vac", "va", "vdc", "pdc", "k", "vref", "la", "lb", "lc")}
-    conv["ac"], conv["dc"] = np.zeros(0, int), np.zeros(0, int)
+    conv = {k: np.zeros(0) for k in ("p", "q", "vac", "va", "vdc", "pdc", "k", "vref", "la", "lb", "lc", "kace")}
+    conv["ac"], conv["dc"], conv["r"] = np.zeros(0, int), np.zeros(0, int), np.zeros(0, int)
     conv["mode"] = np.zeros(0, dtype=object)
     conv["name"] = []
     conv["index"] = np.zeros(0, int)
@@ -307,6 +313,23 @@ def build_model(net):
             k=vsc.droop_k.to_numpy(float), vref=vsc.vdc_ref_pu.to_numpy(float),
             la=vsc.loss_a.to_numpy(float), lb=vsc.loss_b.to_numpy(float), lc=vsc.loss_c.to_numpy(float),
         )
+        # ACE: remote AC node r (same AC grid) and gain k in p.u. power per radian
+        conv["r"], conv["kace"] = np.full(len(modes), -1), np.zeros(len(modes))
+        if np.any(modes == "ACE"):
+            comp = _ac_components(ppc, n_ac)
+            for i in np.flatnonzero(modes == "ACE"):
+                idx, rb = int(vsc.index[i]), int(vsc.ace_bus.iloc[i])
+                if rb not in bus_lookup:
+                    raise ValueError(f"ACE converter {idx}: ace_bus {rb} is not an in-service AC bus")
+                r = bus_lookup[rb]
+                if r == ac_nodes[i]:
+                    raise ValueError(f"ACE converter {idx}: ace_bus is the converter's own AC bus")
+                if comp[r] != comp[ac_nodes[i]]:
+                    raise ValueError(f"ACE converter {idx}: ace_bus {rb} is not in the same AC grid")
+                k_deg = float(vsc.ace_k_mw_per_deg.iloc[i])
+                if k_deg < 0:
+                    raise ValueError(f"ACE converter {idx}: ace_k_mw_per_deg must be >= 0")
+                conv["r"][i], conv["kace"][i] = r, k_deg * 180.0 / np.pi / base
         for i, m in enumerate(modes):
             l, k = ac_nodes[i], dc_nodes[i]
             if m in ("VdcQ", "VdcV"):
@@ -348,6 +371,15 @@ def _check_dc_islands(n_dc, dc_lines, dc_fixed, conv, dc_bus_id):
         if not (dc_fixed[nodes].any() or droop[nodes].any()):
             raise ValueError(f"DC island {dc_bus_id[nodes].tolist()} has no voltage-controlling element "
                              "(source_dc, VdcQ converter or droop converter with k > 0)")
+
+
+def _ac_components(ppc, n_ac):
+    """Connected AC grid of every AC node (in-service branches of the ppc)."""
+    br = ppc["branch"]
+    on = br[:, BR_STATUS].real > 0
+    f, t = br[on, F_BUS].real.astype(int), br[on, T_BUS].real.astype(int)
+    A = sp.coo_matrix((np.ones(len(f)), (f, t)), shape=(n_ac, n_ac))
+    return connected_components(A, directed=False)[1]
 
 
 def build_ybus(model):

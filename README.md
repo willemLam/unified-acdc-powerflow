@@ -21,7 +21,8 @@ This is the maintained Python implementation. The MATLAB code of the paper is in
   - `PV` (P and AC voltage);
   - `VdcV` (DC voltage and AC voltage);
   - `GF`, grid-forming (AC voltage magnitude and angle);
-  - `droop`, DC-voltage droop: P_dc = P_dc,ref − k·(V_dc − V_dc,ref).
+  - `droop`, DC-voltage droop: P_dc = P_dc,ref − k·(V_dc − V_dc,ref);
+  - `ACE`, AC emulation of a point-to-point link: P = P₀ − k·(θ_bus − θ_remote), k in MW/deg.
 - **Converter losses:** P_loss = a + b·|I| + c·|I|².
 - **Direct converter connection:** converters connect directly to their AC and DC bus. No internal nodes or coupling impedances are needed, and the buses may have any number of neighbours, loads or generators.
 - **Station components** (transformer, phase reactor, filter, cable) are ordinary network elements.

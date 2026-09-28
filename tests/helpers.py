@@ -100,7 +100,9 @@ def power_balance_residual(res):
             out.append(sc.real - c["p"][i])
         if mode == "droop":  # P_dc = P_dc,ref - k (E_k - V_ref), P_ac = -(P_dc + loss)
             out.append(sc.real + c["pdc"][i] - c["k"][i] * (Edc[k] - c["vref"][i]) + loss)
-        if mode in ("PQ", "VdcQ", "droop") and not m.ac_pv[l]:
+        if mode == "ACE":  # P = P0 - k (θ_l - θ_r)
+            out.append(sc.real - (c["p"][i] - c["kace"][i] * np.angle(E[l] * np.conj(E[c["r"][i]]))))
+        if mode in ("PQ", "VdcQ", "droop", "ACE") and not m.ac_pv[l]:
             out.append(sc.imag - c["q"][i])
         if mode in ("PV", "VdcV"):
             out.append(abs(E[l]) - c["vac"][i])

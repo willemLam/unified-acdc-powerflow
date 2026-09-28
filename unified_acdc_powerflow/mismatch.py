@@ -5,8 +5,9 @@ References:
       Networks", IEEE Transactions on Power Systems, 2024, doi:10.1109/TPWRS.2024.3378926.
   [T] W. Lambrichts, "Computational Methods for Hybrid AC/DC Networks", EPFL thesis 11001, 2025, chapter 3
       (adds the grid-forming converter).
-Equation numbers below: [P] (n) / [T] (3.n); single-phase / positive-sequence form. Droop is not part of [P] or
-[T]; it is the standard DC-voltage droop (see "droop" below).
+Equation numbers below: [P] (n) / [T] (3.n); single-phase / positive-sequence form. Droop and AC emulation (ACE)
+are not part of [P] or [T]; they are the standard DC-voltage droop and HVDC AC-line emulation (see "droop" and
+"ACE" below).
 
 Notation
 --------
@@ -45,6 +46,8 @@ All residuals are "calculated - specified":
       (3.37)-(3.44)
     IC droop              P_l - Re s_spec + P_dc,conv + P_loss   Q_l - Im s_spec - Q_set   P_dc,k - p_dc_spec,k - P_dc,conv
       with P_dc,conv = P_dc,ref - k_droop (E_k - V_dc,ref)
+    IC ACE                P_l - Re s_spec - P_ace(x)         as IC PQ                  P_dc,k - p_dc_spec,k + P_ace + P_loss
+      with P_ace = P0 - k (θ_l - θ_r),  θ_l - θ_r = angle(E_l conj(E_r))   (AC emulation of a line from l to r)
 
 If the IC's AC bus also carries a PV generator, row 2 stays the generator's voltage equation and the converter
 injects its Q_set (the generator supplies the rest). If the IC's DC bus is held by a DC voltage source, the DC
@@ -54,7 +57,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-PQ_LIKE = ("PQ", "PV", "droop")  # converters whose DC node is an unknown with a power-balance row
+PQ_LIKE = ("PQ", "PV", "droop", "ACE")  # converters whose DC node is an unknown with a power-balance row
 
 
 @dataclass
@@ -187,6 +190,17 @@ def evaluate(model, x):
                 r2[pl] -= c["q"][i]
             if pk >= 0:
                 rdc[pk] -= p_dc_conv[i]
+
+        elif m == "ACE":
+            # AC emulation (not in [P] or [T]): the AC injection follows the angle difference to the remote node r,
+            # like a line from l to r:  P_ace = P0 - k (θ_l - θ_r),  θ_l - θ_r = angle(E_l conj(E_r)) (no wrap).
+            # Rows as IC PQ with P_set -> P_ace(x).
+            p_ace = c["p"][i] - c["kace"][i] * np.angle(E_ac[l] * np.conj(E_ac[c["r"][i]]))
+            r1[pl] -= p_ace
+            if not l_is_pv:
+                r2[pl] -= c["q"][i]
+            if pk >= 0:
+                rdc[pk] += p_ace + loss[i]
 
         elif m in ("VdcQ", "VdcV"):
             # DC power balance at the fixed node k, written as a quadratic in E_k ([P] (14) / [T] (3.26)):
