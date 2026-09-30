@@ -8,7 +8,8 @@ A unified AC/DC Newton–Raphson power flow for hybrid AC/DC grids and multi-ter
 The AC grids, the DC grids and the interfacing converters are solved in **one** Newton–Raphson, in rectangular coordinates, with an analytical Jacobian. The model is published in:
 
 > W. Lambrichts and M. Paolone, "General and Unified Model of the Power Flow Problem in Multiterminal AC/DC
-> Networks", *IEEE Transactions on Power Systems*, 2024. [doi:10.1109/TPWRS.2024.3378926](https://doi.org/10.1109/TPWRS.2024.3378926)
+> Networks", *IEEE Transactions on Power Systems*, vol. 39, no. 6, 2024. [doi:10.1109/TPWRS.2024.3378926](https://doi.org/10.1109/TPWRS.2024.3378926)
+> (open access, CC BY 4.0; [PDF in this repository](paper/Lambrichts_Paolone_2024_TPWRS.pdf))
 
 This is the maintained Python implementation. The MATLAB code of the paper is in
 [General_and_Unified_Load_flow_for_ACDC](https://github.com/willemLam/General_and_Unified_Load_flow_for_ACDC).
@@ -118,13 +119,17 @@ to 1e-11 p.u. or better.
 ## Contact and citation
 
 Questions, comments and collaboration: **Willem Lambrichts**, willem.lambrichts@gmail.com.
-If you use this code, please cite the paper above. Licensed under the BSD 3-Clause license (see `LICENSE`).
+If you use this code, please cite the paper above ([PDF](paper/Lambrichts_Paolone_2024_TPWRS.pdf), open access
+under CC BY 4.0). The code is licensed under the BSD 3-Clause license (see `LICENSE`).
 
 ```bibtex
 @article{lambrichts2024acdcpf,
   author  = {Lambrichts, Willem and Paolone, Mario},
   title   = {General and Unified Model of the Power Flow Problem in Multiterminal {AC/DC} Networks},
   journal = {IEEE Transactions on Power Systems},
+  volume  = {39},
+  number  = {6},
+  pages   = {7266--7276},
   year    = {2024},
   doi     = {10.1109/TPWRS.2024.3378926}
 }
