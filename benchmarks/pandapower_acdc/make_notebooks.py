@@ -79,7 +79,7 @@ Two non-synchronous AC grids, the IEEE 57-bus and the IEEE 14-bus system, exchan
 multi-terminal HVDC grids with 8 converters. This is the multi-terminal HVDC case of {PAPER} (section IV-B, Fig. 6).
 
 [unified-acdc-powerflow]({REPO}) solves it in a few iterations. pandapower 3.5.5's AC/DC power flow does not
-converge. Step by step we show why: the case combines two situations that pandapower cannot handle.
+converge. Step by step we show why: the case combines two situations on which pandapower 3.5.5 fails.
 
 ![Grid topology]({RAW}/validation/figures/ieee57_14_hvdc.png)"""),
     ("code", SETUP),
@@ -118,8 +118,10 @@ print("pandapower, DC load corrected:", run_pandapower(pp_net))'''),
 ## Step 5: second reason, a converter next to a generator
 
 Converter `IC 202-5` sits on bus 202, whose voltage is held by a generator. This is a common situation (HVDC
-stations are often built next to power plants), but pandapower cannot solve it. We move that converter to a new
-busbar next to bus 202, through a short branch (r = 0.01 p.u.), and give **both** tools this modified grid."""),
+stations are often built next to power plants), and pandapower 3.5.5 does not converge with it, for any coupling
+impedance from 1e-4 to 1e-1 p.u. (see the benchmark README). To show that this is the second cause, we move that
+converter to a new busbar next to bus 202, through a short branch (r = 0.01 p.u.), and give **both** tools this
+modified grid."""),
     ("code", '''net2 = load_case("ieee57_14_hvdc")
 i = net2.vsc.index[net2.vsc.bus == 202][0]
 busbar = pp.create_bus(net2, net2.bus.vn_kv[202], name="busbar of IC 202-5")
@@ -141,10 +143,11 @@ print(f"largest voltage difference: AC {dv_ac:.1e} p.u., DC {dv_dc:.1e} p.u.")''
 impedance in pandapower's model; notebook 2 shows against EMTP-RV that it is not needed.
 
 **Takeaway.** On this multi-terminal HVDC case, pandapower 3.5.5 does not converge because:
-- DC loads are scaled by `sn_mva` (a bug);
-- a converter cannot share a bus with a voltage-controlling generator (a limitation of its converter model).
+- it multiplies DC loads by `sn_mva`;
+- it does not converge with a converter on the bus of a voltage-controlling generator.
 
-unified-acdc-powerflow solves the original case directly, with the converters connected to their buses."""),
+unified-acdc-powerflow solves the original case directly, with the converters connected to their buses. Where
+pandapower converges, the two agree up to the effect of its coupling impedance."""),
 ]
 
 NB_EMTP = [

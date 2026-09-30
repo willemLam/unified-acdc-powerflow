@@ -715,7 +715,7 @@
     "format_version": "3.3.0",
     "converged": false,
     "OPF_converged": false,
-    "name": "PEGASE 1354, 2 HVDC grids - paper case, converters on grid buses - z 0.001",
+    "name": "PEGASE 1354, 2 HVDC grids - as in the paper - z 0.001 pu",
     "f_hz": 50.0,
     "sn_mva": 1000.0,
     "std_types": {

@@ -1,10 +1,17 @@
-case,scenario,n_ac,n_dc,converters,dc_loads,converters_on_gen_bus,coupling_z_pu,pandapower,pp_dc_load_bug_cancelled,pp_init,pp_time_ms,max_dV_vs_engine,engine,engine_iterations,engine_time_ms,pp_ac_only_control
-"IEEE 57+14, 2 HVDC grids","paper case, converters on grid buses",72,10,8,1,1,0.001,not converged,not converged,-,,,converged,5,94.92622618563473,converges
-"IEEE 57+14, 2 HVDC grids",busbar layout,80,18,8,1,0,0.001,not converged,converged,-,,,converged,5,87.36334485001862,converges
-"IEEE 30, 2 HVDC grids","paper case, converters on grid buses",30,8,6,2,1,0.001,not converged,not converged,-,,,converged,4,53.96973807364702,converges
-"IEEE 30, 2 HVDC grids",busbar layout,36,14,6,2,0,0.001,spurious (V 0.93..1.92 p.u.),converged,flat,123.12980205751956,0.1165155725750111,converged,4,53.966250037774444,converges
-"PEGASE 1354, 2 HVDC grids","paper case, converters on grid buses",1354,5,5,0,2,0.001,error: RuntimeError,(no DC load),flat,876.7926089931279,,converged,7,1245.031958911568,converges
-"PEGASE 1354, 2 HVDC grids",busbar layout,1359,10,5,0,0,0.001,converged,(no DC load),auto,213.6292231734842,8.597213607686172e-09,converged,7,1596.8977250158787,converges
-EPFL 26-bus AC/DC microgrid,EMTP-RV setpoints,18,8,4,4,0,0.0001,converged,converged,auto,64.99407882802188,0.00396775966343732,converged,4,42.19949198886752,converges
-EPFL 26-bus AC/DC microgrid,EMTP-RV setpoints,18,8,4,4,0,0.001,converged,converged,auto,66.64865487255156,0.003971609324325054,converged,4,42.19949198886752,converges
-EPFL 26-bus AC/DC microgrid,EMTP-RV setpoints,18,8,4,4,0,0.01,converged,converged,auto,55.53092900663614,0.004010111866740607,converged,4,42.19949198886752,converges
+grid,ac_buses,dc_buses,converters,dc_loads,converters_on_gen_buses,coupling_z_pu,pandapower,pp_dc_load_corrected,pp_gen_bus_moved,dv_ac_as_is_pu,dv_dc_as_is_pu,dv_ac_pu,dv_dc_pu,unified,unified_iterations,unified_time_ms,pp_ac_only_control
+"IEEE 57+14, 2 HVDC grids",72,10,8,1,202,0.0001,not converged,not converged,converged,,,1.86e-06,7.51e-14,converged,5,216,converges
+"IEEE 57+14, 2 HVDC grids",72,10,8,1,202,0.001,not converged,not converged,converged,,,1.86e-05,6.16e-14,converged,5,216,converges
+"IEEE 57+14, 2 HVDC grids",72,10,8,1,202,0.01,not converged,not converged,converged,,,0.000187,6.15e-14,converged,5,216,converges
+"IEEE 57+14, 2 HVDC grids",72,10,8,1,202,0.1,not converged,not converged,converged,,,0.00199,2.22e-16,converged,5,216,converges
+"IEEE 30, 2 HVDC grids",30,8,6,2,102,0.0001,not converged,not converged,converged,,,1.19e-07,5.82e-13,converged,4,174,converges
+"IEEE 30, 2 HVDC grids",30,8,6,2,102,0.001,not converged,not converged,converged,,,1.19e-06,6.04e-13,converged,4,174,converges
+"IEEE 30, 2 HVDC grids",30,8,6,2,102,0.01,not converged,not converged,converged,,,1.18e-05,6.08e-13,converged,4,174,converges
+"IEEE 30, 2 HVDC grids",30,8,6,2,102,0.1,not converged,not converged,converged,,,0.000114,6.09e-13,converged,4,174,converges
+"PEGASE 1354, 2 HVDC grids",1354,5,5,0,352 7282,0.0001,not converged,(no DC load),converged,,,2.77e-10,1.55e-15,converged,7,2.66e+03,converges
+"PEGASE 1354, 2 HVDC grids",1354,5,5,0,352 7282,0.001,error: RuntimeError,(no DC load),converged,,,2.77e-09,2.22e-16,converged,7,2.66e+03,converges
+"PEGASE 1354, 2 HVDC grids",1354,5,5,0,352 7282,0.01,not converged,(no DC load),converged,,,2.77e-08,2.22e-16,converged,7,2.66e+03,converges
+"PEGASE 1354, 2 HVDC grids",1354,5,5,0,352 7282,0.1,not converged,(no DC load),converged,,,2.78e-07,2.22e-16,converged,7,2.66e+03,converges
+EPFL 26-bus AC/DC microgrid (EMTP-RV setpoints),18,8,4,4,-,0.0001,converged,converged,(no converter on a generator bus),0.00397,0.00186,3.45e-06,4.39e-06,converged,4,80.9,converges
+EPFL 26-bus AC/DC microgrid (EMTP-RV setpoints),18,8,4,4,-,0.001,converged,converged,(no converter on a generator bus),0.00397,0.00186,7.59e-06,4.39e-06,converged,4,80.9,converges
+EPFL 26-bus AC/DC microgrid (EMTP-RV setpoints),18,8,4,4,-,0.01,converged,converged,(no converter on a generator bus),0.00401,0.00186,4.96e-05,4.39e-06,converged,4,80.9,converges
+EPFL 26-bus AC/DC microgrid (EMTP-RV setpoints),18,8,4,4,-,0.1,converged,converged,(no converter on a generator bus),0.0044,0.00186,0.000477,4.39e-06,converged,4,80.9,converges

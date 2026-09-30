@@ -77,20 +77,25 @@ shift), `bus_dc`, `line_dc`, `source_dc`, `converter`. Values are per unit, and 
 top of every file. To change a grid, edit its case file and re-run the notebook. Any other case file loads with
 `unified_acdc_powerflow.grid_yaml.read_case(path)`.
 
-## pandapower benchmark
+## Comparison with pandapower
 
-`benchmarks/pandapower_acdc/` compares pandapower 3.5.5's built-in AC/DC power flow with this model on the grids of
-the paper. Two step-by-step notebooks, each runnable in Colab:
+`benchmarks/pandapower_acdc/` compares this model with the AC/DC power flow built into pandapower 3.5.5, on the
+same pandapower networks (the four grids of the paper):
 
-1. [**IEEE 57 + IEEE 14 with two HVDC grids**](benchmarks/pandapower_acdc/01_ieee57_14_two_hvdc_grids.ipynb):
-   pandapower does not converge. It scales DC loads by `sn_mva`, and it cannot solve a converter that shares a bus
-   with a voltage-controlling generator.
-2. [**Validation against EMTP-RV**](benchmarks/pandapower_acdc/02_emtp_rv_microgrid.ipynb): converters need no
-   coupling impedance. This model, with direct connections, matches EMTP-RV to 3.3e-6 p.u. pandapower approximates
-   a direct connection with a small impedance, and its DC powers are off by a factor of 10.
+- **Direct connection.** This model connects converters directly and reproduces an EMTP-RV simulation of the EPFL
+  microgrid to 3.3e-6 p.u. pandapower needs a coupling impedance at every converter, and its result depends on the
+  value chosen.
+- **Converters next to generators.** This model solves the three HVDC grids of the paper in 4–7 iterations.
+  pandapower does not converge on them, for any coupling impedance from 1e-4 to 1e-1 p.u., because a converter
+  shares its bus with a voltage-controlling generator.
+- **DC loads.** pandapower 3.5.5 multiplies DC loads by `sn_mva` (a 5 MW DC load draws 518 MW at `sn_mva` = 100).
+- **Control modes and losses.** This model adds grid-forming with a set angle, DC-voltage droop, AC emulation and
+  the a + b·|I| + c·|I|² loss model.
 
-Details, the full benchmark and a pandapower-only reproducer are in the
-[benchmark README](benchmarks/pandapower_acdc/README.md).
+Where pandapower converges, the two agree, up to a difference proportional to pandapower's coupling impedance.
+Two step-by-step notebooks run in Colab: [IEEE 57 + IEEE 14 with two HVDC grids](benchmarks/pandapower_acdc/01_ieee57_14_two_hvdc_grids.ipynb)
+and [validation against EMTP-RV](benchmarks/pandapower_acdc/02_emtp_rv_microgrid.ipynb). The numbers, the full
+benchmark and a pandapower-only reproducer are in the [benchmark README](benchmarks/pandapower_acdc/README.md).
 
 ## Tests
 
