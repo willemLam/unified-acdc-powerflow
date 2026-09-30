@@ -143,8 +143,20 @@ print(f"largest voltage difference: AC {dv_ac:.1e} p.u., DC {dv_dc:.1e} p.u.")''
     ("md", """Now pandapower converges, and the two tools agree. The remaining difference comes from the coupling
 impedance in pandapower's model; notebook 2 shows against EMTP-RV that it is not needed.
 
-**Takeaway.** On this multi-terminal HVDC case, pandapower 3.5.5 does not converge because:
-- it multiplies DC loads by `sn_mva`;
+## Step 6: each cause on its own
+
+Step 4 corrected the DC load without moving the converter: no convergence. The other way round, with the converter
+moved (step 5) but the DC load left as pandapower scales it:"""),
+    ("code", '''pp_net = with_coupling_impedance(net2, 1e-3)      # converter moved, DC load not corrected
+print("pandapower:", run_pandapower(pp_net))
+print(f"AC voltages {pp_net.res_bus.vm_pu.min():.2f}..{pp_net.res_bus.vm_pu.max():.2f} p.u., "
+      f"DC voltages {pp_net.res_bus_dc.vm_pu.min():.2f}..{pp_net.res_bus_dc.vm_pu.max():.2f} p.u.")'''),
+    ("md", """pandapower reports convergence, but the 10 MW DC load counted as 1000 MW and the voltages are far from any
+operating point. Each cause on its own makes pandapower's result unusable; only with both worked around do the two
+tools agree.
+
+**Takeaway.** On this multi-terminal HVDC case, pandapower 3.5.5 fails because:
+- it multiplies DC loads by `sn_mva` (converged, but with voltages far outside the normal band);
 - it does not converge with a converter on the bus of a voltage-controlling generator.
 
 unified-acdc-powerflow solves the original case directly, with the converters connected to their buses. Where

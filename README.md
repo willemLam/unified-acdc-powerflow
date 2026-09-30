@@ -69,7 +69,7 @@ Newton–Raphson and shows the results per node and per converter.
 
 `microgrid_emtp.ipynb` compares the power flow with an independent reference: the EMTP-RV time-domain simulation
 of the EPFL microgrid ([model](https://github.com/DESL-EPFL/Hybrid_ACDC_EMTP_simulation)), with the measured
-injections as setpoints. The voltages match EMTP-RV to 3.3e-6 p.u. (AC) and 3.3e-8 p.u. (DC), within the errors reported in the paper
+injections as setpoints. The voltages match EMTP-RV to 3.3e-6 p.u. (AC) and 3.2e-8 p.u. (DC), within the errors reported in the paper
 (Table III). A test keeps it that way.
 
 A case file holds MATPOWER-style tables, one row per element: `bus`, `slack`, `gen`, `line`, `trafo` (ratio,
@@ -105,6 +105,8 @@ The test suite (`pytest`) covers:
 - AC-only IEEE 14/57/118 vs pandapower (< 1e-8 p.u.);
 - a meshed 3-terminal DC grid vs pandapower's AC/DC solver (< 1e-5 p.u.);
 - droop limits and power balance;
+- the AC-emulation law at the solution, and k = 0 against PQ mode;
+- the EMTP-RV comparison (largest errors within the paper's Table III);
 - direct connection vs a vanishing busbar impedance;
 - robustness cases;
 - round trips of the case-file format.
