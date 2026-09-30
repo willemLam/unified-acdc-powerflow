@@ -93,9 +93,10 @@ same pandapower networks (the four grids of the paper):
   the a + b·|I| + c·|I|² loss model.
 
 Where pandapower converges, the two agree, up to a difference proportional to pandapower's coupling impedance.
-Two step-by-step notebooks run in Colab: [IEEE 57 + IEEE 14 with two HVDC grids](benchmarks/pandapower_acdc/01_ieee57_14_two_hvdc_grids.ipynb)
-and [validation against EMTP-RV](benchmarks/pandapower_acdc/02_emtp_rv_microgrid.ipynb). The numbers, the full
-benchmark and a pandapower-only reproducer are in the [benchmark README](benchmarks/pandapower_acdc/README.md).
+Three notebooks run in Colab: [IEEE 57 + IEEE 14 with two HVDC grids](benchmarks/pandapower_acdc/01_ieee57_14_two_hvdc_grids.ipynb),
+[validation against EMTP-RV](benchmarks/pandapower_acdc/02_emtp_rv_microgrid.ipynb) and
+[the full benchmark](benchmarks/pandapower_acdc/03_full_benchmark.ipynb). The numbers and a pandapower-only
+reproducer are in the [benchmark README](benchmarks/pandapower_acdc/README.md).
 
 ## Tests
 

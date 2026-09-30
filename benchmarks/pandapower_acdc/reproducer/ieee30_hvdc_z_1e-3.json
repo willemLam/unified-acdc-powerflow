@@ -714,7 +714,7 @@
     "format_version": "3.3.0",
     "converged": false,
     "OPF_converged": false,
-    "name": "IEEE 30, 2 HVDC grids - as in the paper - z 0.001 pu",
+    "name": "IEEE 30, 2 HVDC grids, as in the paper, coupling impedance 1e-3 p.u.",
     "f_hz": 50.0,
     "sn_mva": 100.0,
     "std_types": {
