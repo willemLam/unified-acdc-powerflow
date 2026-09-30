@@ -7,3 +7,4 @@ __pycache__/
 acdc_grid.egg-info/
 *.egg-info/
 benchmarks/pandapower_acdc/unified-acdc-powerflow/
+.DS_Store

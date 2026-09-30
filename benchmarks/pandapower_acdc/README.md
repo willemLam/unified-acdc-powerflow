@@ -22,6 +22,7 @@ What the model of unified-acdc-powerflow adds:
 - **DC-voltage droop control.**
 - **Three-phase unbalance**, including intentional negative-sequence injection (in the paper and the MATLAB implementation; not yet in this Python engine).
 - **Grid-forming converters with a set voltage angle** (in this Python engine).
+- **AC emulation** of a point-to-point link, P = P₀ − k·(θ_bus − θ_remote) (in this Python engine).
 
 ## Full benchmark
 
